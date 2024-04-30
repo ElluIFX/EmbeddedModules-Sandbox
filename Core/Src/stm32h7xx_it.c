@@ -23,6 +23,7 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cm_backtrace.h"
 #include "led.h"
 #include "ll_i2c.h"
 #include "log.h"
@@ -91,15 +92,7 @@ void NMI_Handler(void) {
  */
 void HardFault_Handler(void) {
     /* USER CODE BEGIN HardFault_IRQn 0 */
-    static unsigned int lr = 0, sp = 0;
-    int R0, R1;
-    __ASM("MOV  R0,   lr");
-    lr = R0;
-    __ASM("MOV  R1,   sp");
-    sp = R1;
-    extern void cm_backtrace_fault(uint32_t fault_handler_lr,
-                                   uint32_t fault_handler_sp);
-    cm_backtrace_fault(lr, sp);
+    CM_BACKTRACE_MANUAL_CALL();
     /* USER CODE END HardFault_IRQn 0 */
     while (1) {
         /* USER CODE BEGIN W1_HardFault_IRQn 0 */

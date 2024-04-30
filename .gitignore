@@ -1,0 +1,28 @@
+# dot files
+.*
+!.gitignore
+!.eide
+!/Modules/*
+
+# project out
+/build
+/bin
+/obj
+/out
+*.uvguix.*
+
+# eide template
+*.ept
+*.eide-template
+/MDK-ARM
+/DebugConfig
+*.code-workspace
+
+# python
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.venv
+
+*.pdf

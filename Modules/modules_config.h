@@ -60,6 +60,7 @@ extern "C" {
 #define MOD_ENABLE_SPIF 1
 #define MOD_ENABLE_BOARD_LED 1
 #define MOD_ENABLE_EE 1
+#define MOD_ENABLE_I2C_SLAVE 1
 #define MOD_ENABLE_LL_I2C 1
 #define LL_IIC_CFG_CONVERT_7BIT_ADDR 1
 #define LL_IIC_CFG_USE_IT 1

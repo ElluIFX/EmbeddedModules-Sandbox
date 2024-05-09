@@ -165,6 +165,10 @@ void test_thread(void* arg) {
     LOG_INFO("Boot count: %d", data.boot++);
     mf_set_key("data", &data, sizeof(data_t));
     mf_save();
+
+    mf_hset_u8("test", 0x12);
+    uint8_t val = mf_hget_u8_def("test", 0);
+    LOG_INFO("test: %d", val);
 }
 
 void main_thread(void* arg) {

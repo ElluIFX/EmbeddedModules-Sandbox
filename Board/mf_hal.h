@@ -15,10 +15,14 @@
 #define MF_FLASH_MAIN_ADDR EE_ADDRESS(4)
 
 /* 备份FLASH地址，注释则不使用 */
-#define MF_FLASH_BACKUP_ADDR EE_ADDRESS(5)
+// #define MF_FLASH_BACKUP_ADDR EE_ADDRESS(5)
 
 /* FLASH空数据填充值 */
 #define MF_FLASH_FILL 0xFF
+
+/* FLASH标志位 */
+#define MF_FLASH_HEADER 0xCAFEBA  // 数据库头(24-bit)
+#define MF_FLASH_TAIL 0xBE        // 数据库尾(8-bit)
 
 /* Flash读写函数 */
 

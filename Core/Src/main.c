@@ -128,7 +128,7 @@ void init_all(void) {
 
     sch_task_create("alive", task_alive, 2, 1, 3, NULL);
 
-    // uart_fifo_tx_init(&huart1, NULL, 2048);
+    uart_fifo_tx_init(&huart1, NULL, 2048);
     uart_dma_rx_init(&huart1, NULL, 2048, uart_callback, 1);
     LOG_PASS("UART Initialized");
 
@@ -153,6 +153,23 @@ void init_all(void) {
     LOG_PASS("System Initialized");
 }
 
+void round_robin_test(void* arg) {
+    LOG_INFO("Round Robin Start: %d", (int)arg);
+    kl_thread_set_priority(kl_thread_self(), KLITE_CFG_MAX_PRIO - 1);
+    m_delay_ms(100);
+    for (int i = 0; i < 10; i++) {
+        LOG_INFO("Round Robin Alive: %d", (int)arg);
+        for (int j = 0; j < 1000000; j++) {
+            __NOP();
+        }
+    }
+    LOG_INFO("Round Robin End: %d", (int)arg);
+    kl_thread_set_priority(kl_thread_self(), 1);
+    while (1) {
+        m_delay_ms(1000);
+    }
+}
+
 void test_thread(void* arg) {
     typedef struct {
         uint32_t boot;
@@ -166,9 +183,15 @@ void test_thread(void* arg) {
     mf_set_key("data", &data, sizeof(data_t));
     mf_save();
 
-    mf_hset_u8("test", 0x12);
-    uint8_t val = mf_hget_u8_def("test", 0);
-    LOG_INFO("test: %d", val);
+    kl_thread_t thread1 = kl_thread_create(round_robin_test, (void*)1, 0, 0);
+    kl_thread_t thread2 = kl_thread_create(round_robin_test, (void*)2, 0, 0);
+    kl_thread_t thread3 = kl_thread_create(round_robin_test, (void*)3, 0, 0);
+    kl_thread_set_slice(thread1, 10000);
+    kl_thread_set_slice(thread2, 1000);
+    kl_thread_set_slice(thread3, 100);
+    while (1) {
+        m_delay_ms(1000);
+    }
 }
 
 void main_thread(void* arg) {

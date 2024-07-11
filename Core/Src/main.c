@@ -176,10 +176,24 @@ void test_thread(void* arg) {
     }
 }
 
+void cr_test_main(__async__, void* args) {
+    CR_INIT_LOCAL_BEGIN
+    CR_INIT_LOCAL_END
+
+    CR_DELAY(100);
+
+    LOG_INFO("Coroutine main started");
+    while (true) {
+        CR_DELAY(100);
+    }
+    LOG_INFO("Coroutine main ended");
+}
+
 void main_thread(void* arg) {
     init_all();
 
     kl_thread_create(test_thread, 0, 10240, 0);
+    sch_cortn_run("main", cr_test_main, NULL);
 
     scheduler_run(1);
 }

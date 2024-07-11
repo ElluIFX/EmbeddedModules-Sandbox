@@ -281,7 +281,7 @@ uint8_t sch_event_trigger_ex(const char *name, const void *arg_ptr, uint16_t arg
 ```C
 void coroutine_main(__async__, void *args) // __async__宏必须在函数声明中第一个参数的位置
 {
-    CR_INIT_NOLOCAL() // 声明一个无局部变量协程, 此宏必须在函数内部第一行
+    CR_INIT_NOLOCAL // 声明一个无局部变量协程, 此宏必须在函数内部第一行
 
     // 协程的代码
     while(1){
@@ -296,14 +296,14 @@ void coroutine_main(__async__, void *args) // __async__宏必须在函数声明�
 ```C
 void coroutine_main(__async__, void *args)
 {
-    CR_INIT_LOCAL_BEGIN()  // 声明为有局部变量协程, 此宏必须在函数内部第一行
+    CR_INIT_LOCAL_BEGIN  // 声明为有局部变量协程, 此宏必须在函数内部第一行
     // 在中间声明局部变量（不允许赋值，一律初始化为0）
     uint8_t i;
     struct{
         uint8_t a;
         uint8_t b;
     }s;
-    CR_INIT_LOCAL_END() // 局部变量声明结束
+    CR_INIT_LOCAL_END // 局部变量声明结束
 
     CR_LOCAL(i) = 23; // 可以在这里赋初始值
     uint8_t temp = 0; // 此变量不会被维护，每次函数重入时的值是未定义的
@@ -323,12 +323,12 @@ void coroutine_main(__async__, void *args)
 
 下面介绍每个宏的作用
 
-1. `CR_INIT_NOLOCAL()`
+1. `CR_INIT_NOLOCAL` **(调用无分号)**
 
     + 功能：声明为无局部变量协程。
     + 是 `CR_INIT` 的别名，可以互相替代。
 
-2. `CR_INIT_LOCAL_START()` / `CR_INIT_LOCAL_END()`
+2. `CR_INIT_LOCAL_START` / `CR_INIT_LOCAL_END` **(调用无分号)**
 
     + 功能：声明为有局部变量协程。
     + 注意：二者需成对使用。
@@ -360,9 +360,10 @@ void coroutine_main(__async__, void *args)
 ```C
 void receive_array(__async__, uint8_t *buf, uint16_t len)
 {
-    CR_INIT_LOCAL_START()
+    CR_INIT_LOCAL_START
     uint16_t i;
-    CR_INIT_LOCAL_END()
+    CR_INIT_LOCAL_END
+
     XXXAcquireTransfer();
     while (CR_LOCAL(i) < len) {
       while (!XXXTransferDataReady()) {
@@ -374,9 +375,9 @@ void receive_array(__async__, uint8_t *buf, uint16_t len)
 }
 
 void coroutine_main(__async__, void *args) {
-  CR_INIT_LOCAL_START()
+  CR_INIT_LOCAL_START
   uint8_t buf[32];
-  CR_INIT_LOCAL_END()
+  CR_INIT_LOCAL_END
 
   while (1) {
     CR_AWAIT(receive_array, CR_LOCAL(buf), 32);

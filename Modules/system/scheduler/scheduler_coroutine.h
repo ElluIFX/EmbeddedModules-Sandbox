@@ -12,25 +12,25 @@ typedef void (*cortn_func_t)(__async__, void* args);  // 协程函数指针类�
 /**
  * @brief 初始化协程
  */
-#define CR_INIT() __CR_INIT
+#define CR_INIT __CR_INIT
 
 /**
  * @brief 定义并初始化协程, 在协程函数开头调用
  * @note 如果需要使用局部变量, 使用CR_INIT_LOCAL_BEGIN代替本宏
  */
-#define CR_NOLOCAL() __CR_INIT
+#define CR_INIT_NOLOCAL __CR_INIT
 
 /**
  * @brief 初始化协程局部变量区, 在协程函数最开头调用(以CR_INIT_LOCAL_END结束)
  * @warning 不允许在初始化时赋初值, 全部填充0
  * @note  以LOCAL(xxx)的形式访问局部变量
  */
-#define CR_INIT_LOCAL_BEGIN() __CR_INIT_LOCAL_BEGIN
+#define CR_INIT_LOCAL_BEGIN __CR_INIT_LOCAL_BEGIN
 
 /**
  * @brief 结束协程局部变量区并初始化协程
  */
-#define CR_INIT_LOCAL_END() __CR_INIT_LOCAL_END
+#define CR_INIT_LOCAL_END __CR_INIT_LOCAL_END
 
 /**
  * @brief 局部变量

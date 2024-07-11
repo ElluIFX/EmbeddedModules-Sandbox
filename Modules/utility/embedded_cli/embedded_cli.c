@@ -298,7 +298,7 @@ static EmbeddedCliConfig defaultConfig;
  * - help
  * - clear
  */
-static const uint16_t cliInternalBindingCount = 3;
+static const uint16_t cliInternalBindingCount = 4;
 
 static const char* lineBreak = "\r\n";
 
@@ -405,12 +405,22 @@ static void onHelp(EmbeddedCli* cli, char* tokens, void* context);
 static void onClear(EmbeddedCli* cli, char* tokens, void* context);
 
 /**
- * Reboot device
+ * Print history of commands
+ * @param cli
+ * @param tokens - not used
+ * @param context - not used
+ */
+static void onHistory(EmbeddedCli* cli, char* tokens, void* context);
+
+#ifdef __CORTEX_M
+/**
+ * Reboot device (only for Cortex-M devices)
  * @param cli
  * @param tokens - not used
  * @param context - not used
  */
 static void onReboot(EmbeddedCli* cli, char* tokens, void* context);
+#endif
 
 /**
  * Show error about unknown command
@@ -1320,10 +1330,16 @@ static void initInternalBindings(EmbeddedCli* cli) {
         onClear, "clear", "clear", "Clear terminal screen", false, NULL,
     };
     embeddedCliAddBinding(cli, c);
+    static CliCommandBinding h = {
+        onHistory, "history", "history", "Print command history", false, NULL,
+    };
+    embeddedCliAddBinding(cli, h);
+#ifdef __CORTEX_M
     static CliCommandBinding d = {
         onReboot, "reboot", "reboot", "Reboot device", false, NULL,
     };
     embeddedCliAddBinding(cli, d);
+#endif
 }
 
 static void onHelp(EmbeddedCli* cli, char* tokens, void* context) {
@@ -1373,6 +1389,31 @@ static void onClear(EmbeddedCli* cli, char* tokens, void* context) {
     writeToOutput(cli, "\033[2J\033[1;1H");
 }
 
+static void onHistory(EmbeddedCli* cli, char* tokens, void* context) {
+    UNUSED(tokens);
+    UNUSED(context);
+    PREPARE_IMPL(cli);
+
+    if (impl->history.itemsCount <= 1) {
+        writeToOutputColor(cli, "No history available", CLI_WARNING_COLOR);
+        writeToOutput(cli, lineBreak);
+        return;
+    }
+
+    char temp[] = "  : ";
+
+    for (int i = 1; i < impl->history.itemsCount; ++i) {
+        writeToOutput(cli, " ");
+        temp[0] = '0' + i / 10;
+        temp[1] = '0' + i % 10;
+        writeToOutputColor(cli, temp, CLI_HELP_HEADER_COLOR);
+        writeToOutputColor(cli, historyGet(&impl->history, i + 1),
+                           CLI_HELP_CONTENT_COLOR);
+        writeToOutput(cli, lineBreak);
+    }
+}
+
+#ifdef __CORTEX_M
 static void onReboot(EmbeddedCli* cli, char* tokens, void* context) {
     UNUSED(tokens);
     UNUSED(context);
@@ -1382,6 +1423,7 @@ static void onReboot(EmbeddedCli* cli, char* tokens, void* context) {
     // reboot
     NVIC_SystemReset();
 }
+#endif
 
 static void onUnknownCommand(EmbeddedCli* cli, const char* name) {
     writeToOutputColor(cli, name, CLI_ERROR_COLOR);

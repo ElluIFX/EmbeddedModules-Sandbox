@@ -21,7 +21,9 @@ extern "C" {
 #include "uni_io.h"
 #endif
 
-#include "log_color.h"
+#if LOG_CFG_CUSTOM_INCLUDE_ENABLE
+#include LOG_CFG_CUSTOM_INCLUDE_FILE
+#endif
 
 #define LOG_LEVEL_TRACE 0
 #define LOG_LEVEL_DEBUG 1
@@ -31,56 +33,6 @@ extern "C" {
 #define LOG_LEVEL_ERROR 5
 #define LOG_LEVEL_FATAL 6
 #define LOG_LEVEL_ASSERT 7
-
-/****************************    日志设置     ***********************/
-#if !KCONFIG_AVAILABLE  // 由Kconfig配置
-// 调试日志设置
-#define LOG_CFG_ENABLE 1            // 调试日志总开关
-#define LOG_CFG_ENABLE_TIMESTAMP 1  // 调试日志是否添加时间戳
-#define LOG_CFG_ENABLE_COLOR 1      // 调试日志是否按等级添加颜色
-#define LOG_CFG_ENABLE_FUNC_LINE 0  // 调试日志是否添加函数名和行号
-#define LOG_CFG_ENABLE_MODULE_NAME 1  // 调试日志是否添加模块名(如有)
-#define LOG_CFG_ENABLE_ALIAS 0  // 调试日志是否支持别名(如LOG_E)
-#define LOG_CFG_ENABLE_HOOK 0   // 调试日志是否支持输出钩子
-// 调试日志等级
-#define LOG_CFG_GLOBAL_LEVEL LOG_LEVEL_TRACE  // 调试日志全局等级
-// 日志输出
-#define LOG_CFG_PRINTF printf  // 日志输出函数 (必须为类printf函数)
-#define LOG_CFG_TIMESTAMP_FUNC \
-    ((float)((uint64_t)m_time_ms()) / 1000)  // 时间戳获取
-#define LOG_CFG_TIMESTAMP_FMT "%.3fs"        // 时间戳格式
-#if 0
-#define LOG_CFG_PREFIX "\r"      // 日志前缀 (移动光标到行首)
-#define LOG_CFG_SUFFIX "\033[K"  // 日志后缀 (清空光标到行尾)
-#else
-#define LOG_CFG_PREFIX ""
-#define LOG_CFG_SUFFIX ""
-#endif
-
-#define LOG_CFG_NEWLINE "\r\n"  // 换行符
-
-// 日志等级颜色
-#define LOG_CFG_R_COLOR T_BLUE     // 追踪日志
-#define LOG_CFG_D_COLOR T_CYAN     // 调试日志
-#define LOG_CFG_P_COLOR T_LGREEN   // 操作成功日志
-#define LOG_CFG_I_COLOR T_GREEN    // 信息日志
-#define LOG_CFG_W_COLOR T_YELLOW   // 警告日志
-#define LOG_CFG_E_COLOR T_RED      // 错误日志
-#define LOG_CFG_F_COLOR T_MAGENTA  // 致命错误日志
-#define LOG_CFG_A_COLOR T_RED      // 断言日志
-#define LOG_CFG_T_COLOR T_YELLOW   // 计时日志
-// 日志等级名称
-#define LOG_CFG_C_STR "TRACE"   // 追踪日志
-#define LOG_CFG_D_STR "DEBUG"   // 调试日志
-#define LOG_CFG_P_STR "PASS"    // 操作成功日志
-#define LOG_CFG_I_STR "INFO"    // 信息日志
-#define LOG_CFG_W_STR "WARN"    // 警告日志
-#define LOG_CFG_E_STR "ERROR"   // 错误日志
-#define LOG_CFG_F_STR "FATAL"   // 致命错误日志
-#define LOG_CFG_A_STR "ASSERT"  // 断言日志
-#define LOG_CFG_T_STR "TIMEIT"  // 计时日志
-
-#else
 
 #if LOG_CFG_LEVEL_USE_TRACE
 #define LOG_CFG_GLOBAL_LEVEL LOG_LEVEL_TRACE
@@ -100,9 +52,6 @@ extern "C" {
 #define LOG_CFG_GLOBAL_LEVEL LOG_LEVEL_ASSERT
 #endif
 
-#endif  // KCONFIG_AVAILABLE
-/*********************************************************************/
-
 #ifndef LOG_LEVEL
 #define LOG_LEVEL LOG_CFG_GLOBAL_LEVEL
 #endif
@@ -116,6 +65,8 @@ extern "C" {
 #define LOG_CFG_ENABLE_FATAL (LOG_LEVEL <= LOG_LEVEL_FATAL)
 #define LOG_CFG_ENABLE_ASSERT (LOG_LEVEL <= LOG_LEVEL_ASSERT)
 
+#include "log_color.h"
+
 /**
  * @brief 原始日志输出(直接调用LOG_CFG_PRINTF)
  */
@@ -125,73 +76,91 @@ extern "C" {
  */
 #define PRINTLN(fmt, args...) LOG_CFG_PRINTF(fmt LOG_CFG_NEWLINE, ##args)
 
-#if LOG_CFG_ENABLE
-#if !LOG_CFG_ENABLE_HOOK
-#define __LOG_FINAL(pre, ts, fl, level, color, suf, fmt, args...)          \
-    LOG_CFG_PRINTF(pre T_FMT(color) "[" level "]" T_RST ":" ts fl fmt suf, \
-                   ##args)
-#else  // LOG_CFG_ENABLE_HOOK
+#if LOG_CFG_ENABLE_HOOK
 /**
  * @brief 日志输出钩子
  * @param  fmt              格式化字符串(不包含换行符)
  */
 extern void log_hook(const char* fmt, ...);
-#define __LOG_FINAL(pre, ts, fl, level, color, suf, fmt, args...)          \
+#define __LOG_HOOK(msg, args...) log_hook(msg, ##args)
+#else
+#define __LOG_HOOK(msg, args...) ((void)0)
+#endif
+
+#if LOG_CFG_ENABLE
+#define __LOG_OUTPUT(color, pre, lvl, ts, mod, fl, add, suf, fmt, args...) \
     do {                                                                   \
-        LOG_CFG_PRINTF(pre T_FMT(color) "[" level "]" T_RST                \
-                                        ":" ts fl fmt suf LOG_CFG_NEWLINE, \
-                       ##args);                                            \
-        log_hook(pre "[" level "]:" ts fl fmt suf, ##args);                \
+        LOG_CFG_PRINTF(                                                    \
+            pre T_FMT(color)                                               \
+                lvl T_RST ts mod fl add LOG_CFG_MSG_SEPERATOR fmt suf,     \
+            ##args);                                                       \
+        __LOG_HOOK(lvl ts mod fl LOG_CFG_MSG_SEPERATOR fmt, ##args);       \
     } while (0)
-#endif  // LOG_CFG_ENABLE_HOOK
+#else
+#define __LOG_OUTPUT(color, pre, lvl, ts, mod, fl, add, suf, fmt, args...) \
+    ((void)0)
 #endif  // LOG_CFG_ENABLE
 
+#define __LOG_LEVEL(color, pre, lvl, ts, mod, fl, add, suf, fmt, args...)     \
+    __LOG_OUTPUT(color, pre, LOG_CFG_INFO_PREFIX lvl LOG_CFG_INFO_SUFFIX, ts, \
+                 mod, fl, add, suf, fmt, ##args)
+
+#if defined(LOG_MODULE) && LOG_CFG_ENABLE_MODULE_NAME
+#define __LOG_MOD(color, pre, lvl, ts, fl, add, suf, fmt, args...)    \
+    __LOG_LEVEL(color, pre, lvl, ts,                                  \
+                LOG_CFG_INFO_SEPERATOR LOG_CFG_INFO_PREFIX LOG_MODULE \
+                    LOG_CFG_INFO_SUFFIX,                              \
+                fl, add, suf, fmt, ##args)
+#else
+#define __LOG_MOD(color, pre, lvl, ts, fl, add, suf, fmt, args...) \
+    __LOG_LEVEL(color, pre, lvl, ts, "", fl, add, suf, fmt, ##args)
+#endif
+
 #if LOG_CFG_ENABLE_TIMESTAMP
-#define __LOG_TS(pre, fl, level, color, suf, fmt, args...)                  \
-    __LOG_FINAL(pre, "[" LOG_CFG_TIMESTAMP_FMT "]:", fl, level, color, suf, \
-                fmt, LOG_CFG_TIMESTAMP_FUNC, ##args)
+#define __LOG_TS(color, pre, lvl, fl, add, suf, fmt, args...)                  \
+    __LOG_MOD(color, pre, lvl,                                                 \
+              LOG_CFG_INFO_SEPERATOR LOG_CFG_INFO_PREFIX LOG_CFG_TIMESTAMP_FMT \
+                  LOG_CFG_INFO_SUFFIX,                                         \
+              fl, add, suf, fmt, LOG_CFG_TIMESTAMP_FUNC, ##args)
 #elif !_LOG_ENABLE_TIMESTAMP
-#define __LOG_TS(pre, fl, level, color, suf, fmt, args...) \
-    __LOG_FINAL(pre, "", fl, level, color, suf, fmt, ##args)
+#define __LOG_TS(color, pre, lvl, fl, add, suf, fmt, args...) \
+    __LOG_MOD(color, pre, lvl, "", fl, add, suf, fmt, ##args)
 #endif  // LOG_CFG_ENABLE_TIMESTAMP
 
 #if LOG_CFG_ENABLE_FUNC_LINE
 #ifndef __FUNCTION__
 #define __FUNCTION__ __func__
 #endif
-#define __LOG_FL(pre, level, color, suf, fmt, args...)                        \
-    __LOG_TS(pre, "[%s:%d]:", level, color, suf, fmt, __FUNCTION__, __LINE__, \
-             ##args)
+#define __LOG_FL(color, pre, lvl, add, suf, fmt, args...) \
+    __LOG_TS(color, pre, lvl,                             \
+             LOG_CFG_INFO_SEPERATOR LOG_CFG_INFO_PREFIX   \
+             "%s:%d" LOG_CFG_INFO_SUFFIX,                 \
+             add, suf, fmt, __FUNCTION__, __LINE__, ##args)
 #else
-#define __LOG_FL(pre, level, color, suf, fmt, args...) \
-    __LOG_TS(pre, "", level, color, suf, fmt, ##args)
+#define __LOG_FL(color, pre, lvl, add, suf, fmt, args...) \
+    __LOG_TS(color, pre, lvl, "", add, suf, fmt, ##args)
 #endif  // LOG_CFG_ENABLE_FUNC_LINE
 
-#if defined(LOG_MODULE) && LOG_CFG_ENABLE_MODULE_NAME
-#define __LOG_MOD(pre, level, color, suf, fmt, args...) \
-    __LOG_FL(pre, level, color, suf, "[" LOG_MODULE "]:" fmt, ##args)
-#else
-#define __LOG_MOD(pre, level, color, suf, fmt, args...) \
-    __LOG_FL(pre, level, color, suf, fmt, ##args)
-#endif
+#define __LOG(pre, lvl, color, add, suf, fmt, args...) \
+    __LOG_FL(color, pre, lvl, add, suf, fmt, ##args)
 
-#define __LOG(pre, level, color, suf, fmt, args...) \
-    __LOG_MOD(pre, level, color, suf, fmt, ##args)
-
-#define __LOG_LIMIT(_STR, _CLR, limit_ms, fmt, args...)                       \
-    do {                                                                      \
-        static m_time_t SAFE_NAME(limited_log_t) = 0;                         \
-        static uint32_t SAFE_NAME(limited_log_count) = 0;                     \
-        SAFE_NAME(limited_log_count)++;                                       \
-        if (m_time_ms() > SAFE_NAME(limited_log_t) + limit_ms) {              \
-            SAFE_NAME(limited_log_t) = m_time_ms();                           \
-            __LOG(LOG_CFG_PREFIX, _STR, _CLR, LOG_CFG_SUFFIX LOG_CFG_NEWLINE, \
-                  "[L/%d]:" fmt, SAFE_NAME(limited_log_count), ##args);       \
-            SAFE_NAME(limited_log_count) = 0;                                 \
-        }                                                                     \
+#define __LOG_LIMIT(_STR, _CLR, limit_ms, fmt, args...)          \
+    do {                                                         \
+        static m_time_t SAFE_NAME(limited_log_t) = 0;            \
+        static uint32_t SAFE_NAME(limited_log_count) = 0;        \
+        SAFE_NAME(limited_log_count)++;                          \
+        if (m_time_ms() > SAFE_NAME(limited_log_t) + limit_ms) { \
+            SAFE_NAME(limited_log_t) = m_time_ms();              \
+            __LOG(LOG_CFG_PREFIX, _STR, _CLR,                    \
+                  LOG_CFG_INFO_SEPERATOR LOG_CFG_INFO_PREFIX     \
+                  "%u/" #limit_ms "ms" LOG_CFG_INFO_SUFFIX,      \
+                  LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt,           \
+                  SAFE_NAME(limited_log_count), ##args);         \
+            SAFE_NAME(limited_log_count) = 0;                    \
+        }                                                        \
     } while (0)
 #define __LOG_REFRESH(_STR, _CLR, fmt, args...) \
-    __LOG("\33[s\r\33[1A", _STR, _CLR, "\033[K\33[u", fmt, ##args)
+    __LOG("\33[s\r\33[1A", _STR, _CLR, "", "\33[u", fmt, ##args)
 
 #if LOG_CFG_ENABLE_TRACE
 /**
@@ -199,8 +168,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_TRACE_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_TRACE_REFRESH - 更新上一次输出的日志
  */
-#define LOG_TRACE(fmt, args...)                           \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_R_STR, LOG_CFG_R_COLOR, \
+#define LOG_TRACE(fmt, args...)                               \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_R_STR, LOG_CFG_R_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_TRACE_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_R_STR, LOG_CFG_R_COLOR, limit_ms, fmt, ##args)
@@ -213,8 +182,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_DEBUG_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_DEBUG_REFRESH - 更新上一次输出的日志
  */
-#define LOG_DEBUG(fmt, args...)                           \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_D_STR, LOG_CFG_D_COLOR, \
+#define LOG_DEBUG(fmt, args...)                               \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_D_STR, LOG_CFG_D_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_DEBUG_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_D_STR, LOG_CFG_D_COLOR, limit_ms, fmt, ##args)
@@ -227,8 +196,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_PASS_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_PASS_REFRESH - 更新上一次输出的日志
  */
-#define LOG_PASS(fmt, args...)                            \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_P_STR, LOG_CFG_P_COLOR, \
+#define LOG_PASS(fmt, args...)                                \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_P_STR, LOG_CFG_P_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_PASS_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_P_STR, LOG_CFG_P_COLOR, limit_ms, fmt, ##args)
@@ -241,8 +210,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_INFO_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_INFO_REFRESH - 更新上一次输出的日志
  */
-#define LOG_INFO(fmt, args...)                            \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_I_STR, LOG_CFG_I_COLOR, \
+#define LOG_INFO(fmt, args...)                                \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_I_STR, LOG_CFG_I_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_INFO_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_I_STR, LOG_CFG_I_COLOR, limit_ms, fmt, ##args)
@@ -255,8 +224,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_WARN_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_WARN_REFRESH - 更新上一次输出的日志
  */
-#define LOG_WARN(fmt, args...)                            \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_W_STR, LOG_CFG_W_COLOR, \
+#define LOG_WARN(fmt, args...)                                \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_W_STR, LOG_CFG_W_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_WARN_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_W_STR, LOG_CFG_W_COLOR, limit_ms, fmt, ##args)
@@ -269,8 +238,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_ERROR_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_ERROR_REFRESH - 更新上一次输出的日志
  */
-#define LOG_ERROR(fmt, args...)                           \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_E_STR, LOG_CFG_E_COLOR, \
+#define LOG_ERROR(fmt, args...)                               \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_E_STR, LOG_CFG_E_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_ERROR_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_E_STR, LOG_CFG_E_COLOR, limit_ms, fmt, ##args)
@@ -283,8 +252,8 @@ extern void log_hook(const char* fmt, ...);
  * @note 变体: LOG_FATAL_LIMIT - 限制日志输出周期(ms)
  * @note 变体: LOG_FATAL_REFRESH - 更新上一次输出的日志
  */
-#define LOG_FATAL(fmt, args...)                           \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_F_STR, LOG_CFG_F_COLOR, \
+#define LOG_FATAL(fmt, args...)                               \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_F_STR, LOG_CFG_F_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 #define LOG_FATAL_LIMIT(limit_ms, fmt, args...) \
     __LOG_LIMIT(LOG_CFG_F_STR, LOG_CFG_F_COLOR, limit_ms, fmt, ##args)
@@ -340,12 +309,12 @@ extern void log_hook(const char* fmt, ...);
  * @param  level            日志等级(字符串)
  * @param  color            日志颜色(T_<COLOR>)
  */
-#define LOG_CUSTOM(level, color, fmt, args...)                               \
-    __LOG(LOG_CFG_PREFIX, level, color, LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, \
-          ##args)
+#define LOG_CUSTOM(level, color, fmt, args...)                              \
+    __LOG(LOG_CFG_PREFIX, level, color, "", LOG_CFG_SUFFIX LOG_CFG_NEWLINE, \
+          fmt, ##args)
 
-#define __ASSERT_PRINT(text, args...)                     \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_A_STR, LOG_CFG_A_COLOR, \
+#define __ASSERT_PRINT(text, args...)                         \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_A_STR, LOG_CFG_A_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, text, ##args)
 
 #if LOG_CFG_ENABLE_FUNC_LINE
@@ -478,7 +447,9 @@ extern void log_hook(const char* fmt, ...);
 
 #ifndef __cycleof__  // __cycleof__功能默认由perf_counter实现
 #include "macro.h"
+#if defined(__clang__)
 #pragma clang diagnostic ignored "-Wcompound-token-split-by-macro"
+#endif
 #define __cycleof__(__DUMMY, ...)                              \
     using(uint64_t _ = m_tick(), __cycle_count__ = _, _ = _, { \
         _ = m_tick() - _;                                      \
@@ -489,8 +460,8 @@ extern void log_hook(const char* fmt, ...);
     })
 #endif
 
-#define __LOG_TIMEIT(fmt, args...)                        \
-    __LOG(LOG_CFG_PREFIX, LOG_CFG_T_STR, LOG_CFG_T_COLOR, \
+#define __LOG_TIMEIT(fmt, args...)                            \
+    __LOG(LOG_CFG_PREFIX, LOG_CFG_T_STR, LOG_CFG_T_COLOR, "", \
           LOG_CFG_SUFFIX LOG_CFG_NEWLINE, fmt, ##args)
 
 /**

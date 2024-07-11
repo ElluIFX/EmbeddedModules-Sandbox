@@ -15,8 +15,6 @@
 extern "C" {
 #endif
 
-#include "main.h"
-
 #ifndef __has_include
 // Compatibility with non-clang compilers.
 #define __has_include(x) 1
@@ -24,44 +22,16 @@ extern "C" {
 
 #if __has_include("modules_config.h")
 #include "modules_config.h"
-#define KCONFIG_AVAILABLE 1
 #else
-#warning \
-    "modules_config.h not found, run menuconfig (by Kconfig) to generate it"
-#define KCONFIG_AVAILABLE 0
+#error "modules_config.h not found, run menuconfig (by Kconfig) to generate it"
 #endif
 
-#if !KCONFIG_AVAILABLE  // 由Kconfig配置
-// 动态内存分配方法(m_alloc/m_free/m_realloc):
-#define MOD_CFG_HEAP_MATHOD_STDLIB 1
-#define MOD_CFG_HEAP_MATHOD_LWMEM 0
-#define MOD_CFG_HEAP_MATHOD_KLITE 0
-#define MOD_CFG_HEAP_MATHOD_FREERTOS 0
-#define MOD_CFG_HEAP_MATHOD_HEAP4 0
-#define MOD_CFG_HEAP_MATHOD_RTT 0
-
-// 时间获取方法(m_tick/m_time_*)
-#define MOD_CFG_TIME_MATHOD_HAL 0
-#define MOD_CFG_TIME_MATHOD_PERF_COUNTER 1
-#define MOD_CFG_TIME_MATHOD_KLITE 0
-
-// 延时方法(m_delay_*)
-#define MOD_CFG_DELAY_MATHOD_HAL 0
-#define MOD_CFG_DELAY_MATHOD_PERF_COUNTER 1
-#define MOD_CFG_DELAY_MATHOD_KLITE 0
-#define MOD_CFG_DELAY_MATHOD_FREERTOS 0
-#define MOD_CFG_DELAY_MATHOD_RTT 0
-
-// 是否使用操作系统(MOD_MUTEX_*)
-#define MOD_CFG_USE_OS_NONE 1
-#define MOD_CFG_USE_OS_KLITE 0
-#define MOD_CFG_USE_OS_FREERTOS 0
-#define MOD_CFG_USE_OS_RTT 0
-
-// 是否在系统空闲时进入WFI
-#define MOD_CFG_WFI_WHEN_SYSTEM_IDLE 0
-
-#endif  // KCONFIG_AVAILABLE
+#include MOD_CFG_PLATFORM_HEADER
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MOD_CFG_OS_AVAILABLE (!MOD_CFG_USE_OS_NONE)
 
@@ -71,7 +41,6 @@ typedef uint32_t m_time_t;
 #define init_module_timebase() ((void)0)
 #define m_time_ms() HAL_GetTick()
 #define m_time_us() (HAL_GetTick() * 1000)
-#define m_time_ns() (HAL_GetTick() * 1000000)
 #define m_time_s() (HAL_GetTick() / 1000)
 #define m_tick() HAL_GetTick()
 #define m_tick_clk (1000)
@@ -80,10 +49,9 @@ typedef uint32_t m_time_t;
 typedef int64_t m_time_t;
 #define m_time_t_max (INT64_MAX)
 #define init_module_timebase() init_cycle_counter(1);
+#define m_time_s() (((uint64_t)get_system_ms()) / 1000)
 #define m_time_ms() ((uint64_t)get_system_ms())
 #define m_time_us() ((uint64_t)get_system_us())
-#define m_time_ns() (((uint64_t)get_system_us()) * 1000)
-#define m_time_s() (((uint64_t)get_system_ms()) / 1000)
 #define m_tick() ((uint64_t)get_system_ticks())
 #define m_tick_clk ((uint64_t)SystemCoreClock)
 #elif MOD_CFG_TIME_MATHOD_KLITE
@@ -91,12 +59,73 @@ typedef int64_t m_time_t;
 typedef kl_tick_t m_time_t;
 #define m_time_t_max (KL_WAIT_FOREVER)
 #define init_module_timebase() ((void)0)
+#define m_time_s() (m_time_ms() / 1000)
 #define m_time_ms() (kl_ticks_to_ms(kl_tick_t()))
 #define m_time_us() (kl_ticks_to_us(kl_tick_t()))
-#define m_time_ns() (m_time_us() * 1000)
-#define m_time_s() (m_time_ms() / 1000)
 #define m_tick() (kl_tick_t())
 #define m_tick_clk (KLITE_CFG_FREQ)
+#elif MOD_CFG_TIME_MATHOD_FREERTOS
+#include "FreeRTOS.h"
+typedef TickType_t m_time_t;
+#define m_time_t_max (portMAX_DELAY)
+#define init_module_timebase() ((void)0)
+#define m_time_s() (m_time_ms() / 1000)
+#define m_time_ms() pdTICKS_TO_MS(xTaskGetTickCount())
+#define m_time_us() pdTICKS_TO_US(xTaskGetTickCount())
+#define m_tick() xTaskGetTickCount()
+#define m_tick_clk (configTICK_RATE_HZ)
+#elif MOD_CFG_TIME_MATHOD_RTT
+#include "rtthread.h"
+typedef rt_tick_t m_time_t;
+#define m_time_t_max (RT_WAITING_FOREVER)
+#define init_module_timebase() ((void)0)
+#define m_time_s() (rt_tick_get() / RT_TICK_PER_SECOND)
+#if RT_TICK_PER_SECOND <= 1000
+#define m_time_ms() (rt_tick_get() * (1000 / RT_TICK_PER_SECOND))
+#define m_time_us() (rt_tick_get() * (1000000 / RT_TICK_PER_SECOND))
+#else
+#define m_time_ms() (rt_tick_get() / (RT_TICK_PER_SECOND / 1000))
+#define m_time_us() (rt_tick_get() / (RT_TICK_PER_SECOND / 1000000))
+#endif
+#define m_tick() rt_tick_get()
+#define m_tick_clk (RT_TICK_PER_SECOND)
+#elif MOD_CFG_TIME_MATHOD_CUSTOM
+#if MOD_CFG_CUSTOM_TIME_IMPORT
+#include MOD_CFG_CUSTOM_TIME_HEADER
+#endif
+#if MOD_CFG_CUSTOM_TIME_TYPE_U32
+typedef uint32_t m_time_t;
+#define m_time_t_max (UINT32_MAX)
+#elif MOD_CFG_CUSTOM_TIME_TYPE_U64
+typedef uint64_t m_time_t;
+#define m_time_t_max (UINT64_MAX)
+#elif MOD_CFG_CUSTOM_TIME_TYPE_S32
+typedef int32_t m_time_t;
+#define m_time_t_max (INT32_MAX)
+#elif MOD_CFG_CUSTOM_TIME_TYPE_S64
+typedef int64_t m_time_t;
+#define m_time_t_max (INT64_MAX)
+#endif  // MOD_CFG_CUSTOM_TIME_TYPE_*
+extern void mod_custom_tick_init(void);
+#define init_module_timebase() mod_custom_tick_init()
+extern m_time_t mod_custom_tick_get(void);
+#define m_tick() mod_custom_tick_get()
+#define m_time_s() (m_tick() / m_tick_clk)
+#if MOD_CFG_CUSTOM_TIME_BASE_DYNAMIC
+extern m_time_t mod_custom_tick_clk(void);
+#define m_tick_clk mod_custom_tick_clk()
+#define m_time_ms() (m_tick() * 1000 / m_tick_clk)
+#define m_time_us() (m_tick() * 1000000 / m_tick_clk)
+#else  // MOD_CFG_CUSTOM_TIME_BASE_DYNAMIC
+#define m_tick_clk (MOD_CFG_CUSTOM_TIME_BASE)
+#if MOD_CFG_CUSTOM_TIME_BASE <= 1000
+#define m_time_ms() (m_tick() * (1000 / m_tick_clk))
+#define m_time_us() (m_tick() * (1000000 / m_tick_clk))
+#else
+#define m_time_ms() (m_tick() / (m_tick_clk / 1000))
+#define m_time_us() (m_tick() / (m_tick_clk / 1000000))
+#endif
+#endif  // MOD_CFG_CUSTOM_TIME_BASE_DYNAMIC
 #else
 #error "MOD_CFG_TIME_MATHOD invalid"
 #endif  // MOD_CFG_TIME_MATHOD
@@ -116,7 +145,6 @@ typedef kl_tick_t m_time_t;
 #define m_delay_s(x) kl_thread_sleep((x) * KLITE_CFG_FREQ)
 #elif MOD_CFG_DELAY_MATHOD_FREERTOS  // freertos
 #include "FreeRTOS.h"                // period = 1ms
-#include "task.h"
 #define m_delay_us(x) vTaskDelay((x * pdMS_TO_TICKS(1)) / 1000)
 #define m_delay_ms(x) vTaskDelay(pdMS_TO_TICKS(x))
 #define m_delay_s(x) vTaskDelay(pdMS_TO_TICKS(x * 1000))
@@ -126,6 +154,16 @@ typedef kl_tick_t m_time_t;
     rt_thread_delay((rt_tick_t)(x) / (1000000UL / RT_TICK_PER_SECOND))
 #define m_delay_ms(x) rt_thread_delay(rt_tick_from_millisecond(x))
 #define m_delay_s(x) rt_thread_delay((rt_tick_t)(x) * RT_TICK_PER_SECOND)
+#elif MOD_CFG_DELAY_MATHOD_CUSTOM  // custom
+#if MOD_CFG_CUSTOM_DELAY_IMPORT
+#include MOD_CFG_CUSTOM_DELAY_HEADER
+#endif
+extern void mod_custom_delay_us(m_time_t us);
+extern void mod_custom_delay_ms(m_time_t ms);
+extern void mod_custom_delay_s(m_time_t s);
+#define m_delay_us(x) mod_custom_delay_us(x)
+#define m_delay_ms(x) mod_custom_delay_ms(x)
+#define m_delay_s(x) mod_custom_delay_s(x)
 #else
 #error "MOD_CFG_DELAY_MATHOD invalid"
 #endif  // MOD_CFG_DELAY_MATHOD
@@ -174,18 +212,21 @@ typedef kl_tick_t m_time_t;
 #define m_alloc(size) rt_malloc(size)
 #define m_free(ptr) rt_free(ptr)
 #define m_realloc(ptr, size) rt_realloc(ptr, size)
+#elif MOD_CFG_HEAP_MATHOD_CUSTOM  // custom
+#if MOD_CFG_CUSTOM_HEAP_IMPORT
+#include MOD_CFG_CUSTOM_HEAP_HEADER
+#endif
+extern void mod_custom_heap_init(void* ptr, size_t size);
+extern void* mod_custom_heap_alloc(size_t size);
+extern void mod_custom_heap_free(void* ptr);
+extern void* mod_custom_heap_realloc(void* ptr, size_t size);
+#define init_module_heap(ptr, size) mod_custom_heap_init(ptr, size)
+#define m_alloc(size) mod_custom_heap_alloc(size)
+#define m_free(ptr) mod_custom_heap_free(ptr)
+#define m_realloc(ptr, size) mod_custom_heap_realloc(ptr, size)
 #else
 #error "MODCFG__HEAP_MATHOD invalid"
 #endif
-
-static inline void* m_calloc(size_t nmemb, size_t size) {
-    void* mem = m_alloc(nmemb * size);
-    if (mem) {
-        void* memset(void* s, int c, size_t n);
-        memset(mem, 0, nmemb * size);
-    }
-    return mem;
-}
 
 #if MOD_CFG_USE_OS_NONE  // none
 #define MOD_MUTEX_HANDLE __attribute__((unused)) uint8_t

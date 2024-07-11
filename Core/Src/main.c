@@ -28,6 +28,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#define LOG_LEVEL LOG_LEVEL_DEBUG
 #define LOG_MODULE "main"
 #include "log.h"
 
@@ -101,7 +102,7 @@ key_read_e read_key(uint8_t idx) {
 }
 
 void key_callback(uint8_t idx, uint8_t event) {
-    LOG_TRACE("Key %d event %s - %d", idx, key_get_event_name(event),
+    LOG_DEBUG("Key %d event %s - %d", idx, key_get_event_name(event),
               key_get_multi_event_num(event));
 }
 
@@ -122,12 +123,15 @@ void uart_callback(uint8_t* buf, size_t len) {
     embeddedCliReceiveBuffer(cli, (const char*)buf, len);
 }
 
+void cli_putchar(EmbeddedCli* cli, char c) {
+    putchar(c);
+}
+
 void init_all(void) {
     init_module_timebase();
     LOG_CUSTOM("INIT", T_LMAGENTA, "System Initializing...");
 
     sch_task_create("alive", task_alive, 2, 1, 3, NULL);
-
     uart_fifo_tx_init(&huart1, NULL, 2048);
     uart_dma_rx_init(&huart1, NULL, 2048, uart_callback, 1);
     LOG_PASS("UART Initialized");
@@ -143,6 +147,7 @@ void init_all(void) {
     LOG_INFO("MiniFlashDB Initialized");
 
     cli = embeddedCliNewDefault();
+    cli->writeChar = cli_putchar;
     sch_add_command_to_cli(cli);
     system_utils_add_command_to_cli(cli);
     lfs_utils_add_command_to_cli(cli, &lfs);
@@ -151,23 +156,6 @@ void init_all(void) {
     LOG_PASS("CLI Initialized");
 
     LOG_PASS("System Initialized");
-}
-
-void round_robin_test(void* arg) {
-    LOG_INFO("Round Robin Start: %d", (int)arg);
-    kl_thread_set_priority(kl_thread_self(), KLITE_CFG_MAX_PRIO - 1);
-    m_delay_ms(100);
-    for (int i = 0; i < 10; i++) {
-        LOG_INFO("Round Robin Alive: %d", (int)arg);
-        for (int j = 0; j < 1000000; j++) {
-            __NOP();
-        }
-    }
-    LOG_INFO("Round Robin End: %d", (int)arg);
-    kl_thread_set_priority(kl_thread_self(), 1);
-    while (1) {
-        m_delay_ms(1000);
-    }
 }
 
 void test_thread(void* arg) {
@@ -183,14 +171,8 @@ void test_thread(void* arg) {
     mf_set_key("data", &data, sizeof(data_t));
     mf_save();
 
-    kl_thread_t thread1 = kl_thread_create(round_robin_test, (void*)1, 0, 0);
-    kl_thread_t thread2 = kl_thread_create(round_robin_test, (void*)2, 0, 0);
-    kl_thread_t thread3 = kl_thread_create(round_robin_test, (void*)3, 0, 0);
-    kl_thread_set_slice(thread1, 10000);
-    kl_thread_set_slice(thread2, 1000);
-    kl_thread_set_slice(thread3, 100);
     while (1) {
-        m_delay_ms(1000);
+        kl_thread_sleep(10);
     }
 }
 
@@ -253,17 +235,12 @@ int main(void) {
 
     static uint8_t __ALIGNED(32) heap[256UL * 1024UL] = {0};
 
-    kl_kernel_init(heap, sizeof(heap));            /* 系统初始化 */
-    kl_thread_create(main_thread, NULL, 10240, 5); /* 创建main线程 */
-    kl_kernel_start();                             /* 启动系统 */
-
-    // init_module_heap(heap, sizeof(heap));
-    // init_all();
-    // scheduler_run(1);
+    kl_kernel_init(heap, sizeof(heap));             /* 系统初始化 */
+    kl_thread_create(main_thread, NULL, 102400, 5); /* 创建main线程 */
+    kl_kernel_start();                              /* 启动系统 */
 
     /* USER CODE END 2 */
 
-    /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
         /* USER CODE END WHILE */

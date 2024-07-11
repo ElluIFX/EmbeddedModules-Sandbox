@@ -3,29 +3,173 @@
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    ".eide/deps",
-    "Core",
-    "Drivers",
-    "MDK-ARM",
-    "Board",
     "Modules"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
     "files": [],
-    "folders": []
+    "folders": [
+      {
+        "name": "CORE",
+        "files": [],
+        "folders": [
+          {
+            "name": "SRC",
+            "files": [
+              {
+                "path": "Core/Src/dma.c"
+              },
+              {
+                "path": "Core/Src/gpio.c"
+              },
+              {
+                "path": "Core/Src/i2c.c"
+              },
+              {
+                "path": "Core/Src/main.c"
+              },
+              {
+                "path": "Core/Src/spi.c"
+              },
+              {
+                "path": "Core/Src/stm32h7xx_hal_msp.c"
+              },
+              {
+                "path": "Core/Src/stm32h7xx_it.c"
+              },
+              {
+                "path": "Core/Src/system_stm32h7xx.c"
+              },
+              {
+                "path": "Core/Src/usart.c"
+              }
+            ],
+            "folders": []
+          }
+        ]
+      },
+      {
+        "name": "DRIVERS",
+        "files": [],
+        "folders": [
+          {
+            "name": "STM32H7XX_HAL_DRIVER",
+            "files": [],
+            "folders": [
+              {
+                "name": "SRC",
+                "files": [
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_spi_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_dma.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_exti.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_gpio.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_i2c.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_rcc.c"
+                  },
+                  {
+                    "path": "Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_ll_utils.c"
+                  }
+                ],
+                "folders": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "MDK-ARM",
+        "files": [
+          {
+            "path": "MDK-ARM/startup_stm32h7b0xx.s"
+          }
+        ],
+        "folders": []
+      }
+    ]
   },
   "outDir": "build",
   "deviceName": null,
-  "packDir": ".pack/Keil/STM32H7xx_DFP.2.3.1",
+  "packDir": null,
   "miscInfo": {
-    "uid": "bcb5750ce73e168c1feb2c4d7ec46048"
+    "uid": "2adaa697bbf37ee5a1a30ccb5776a00d"
   },
   "targets": {
     "H7B0_Test": {
-      "excludeList": [
-        "<virtual_root>/Drivers"
-      ],
+      "excludeList": [],
       "toolchain": "AC6",
       "compileConfig": {
         "cpuType": "Cortex-M7",
@@ -67,16 +211,6 @@
               "isStartup": true
             },
             {
-              "tag": "ROM",
-              "id": 2,
-              "mem": {
-                "startAddr": "0x24000000",
-                "size": "0x40000"
-              },
-              "isChecked": false,
-              "isStartup": false
-            },
-            {
               "tag": "IROM",
               "id": 1,
               "mem": {
@@ -113,23 +247,6 @@
           "proType": 1,
           "speed": 8000,
           "otherCmds": ""
-        },
-        "STLink": {
-          "bin": "",
-          "proType": "SWD",
-          "resetMode": "default",
-          "runAfterProgram": true,
-          "speed": 4000,
-          "address": "0x08000000",
-          "elFile": "<stlink>/STM32CubePro_FK7B0M1_V0.stldr",
-          "optionBytes": ".eide/h7b0_test.st.option.bytes.ini",
-          "otherCmds": ""
-        },
-        "OpenOCD": {
-          "bin": "",
-          "target": "${workspaceFolder}/openocd",
-          "interface": "stlink",
-          "baseAddr": "0x08000000"
         }
       },
       "custom_dep": {
@@ -142,10 +259,55 @@
           "Drivers/CMSIS/Include",
           ".cmsis/include",
           "MDK-ARM/RTE/_H7B0_Test",
-          ".eide/deps"
+          "Core/Src",
+          "Drivers/STM32H7xx_HAL_Driver/Src",
+          "MDK-ARM",
+          "Board",
+          "Modules",
+          "Modules/utility/xv",
+          "Modules/utility/TimeLib",
+          "Modules/utility/term_table",
+          "Modules/utility/ryu",
+          "Modules/utility/perf_counter",
+          "Modules/utility/macro",
+          "Modules/utility/lwprintf",
+          "Modules/utility/embedded_cli",
+          "Modules/utility/embedded_cli/utils",
+          "Modules/system/scheduler",
+          "Modules/system/klite/port/cortex-m",
+          "Modules/system/klite/port/cortex-m/cortex-m4-m7",
+          "Modules/system/klite/kernel",
+          "Modules/system/klite/ipc",
+          "Modules/system/klite/include",
+          "Modules/system/klite/heap",
+          "Modules/storage/MiniFlashDB",
+          "Modules/storage/littlefs",
+          "Modules/storage/littlefs/ports",
+          "Modules/peripheral/uni_io",
+          "Modules/peripheral/ll_i2c",
+          "Modules/peripheral/ee",
+          "Modules/peripheral/board_led",
+          "Modules/driver/spif",
+          "Modules/driver/key",
+          "Modules/debug/log",
+          "Modules/debug/coremark/coremark_port",
+          "Modules/debug/coremark/coremark",
+          "Modules/debug/cm_backtrace",
+          "Modules/debug/cm_backtrace/Languages/zh-CN",
+          "Modules/debug/cm_backtrace/Languages/en-US",
+          "Modules/datastruct/uthash",
+          "Modules/datastruct/ulist",
+          "Modules/datastruct/udict",
+          "Modules/datastruct/struct2json/src",
+          "Modules/datastruct/struct2json/inc",
+          "Modules/datastruct/sds",
+          "Modules/datastruct/lfifo",
+          "Modules/datastruct/lfbb",
+          "Modules/datastruct/json",
+          "Modules/communication/xymodem",
+          "RTE/_H7B0_Test"
         ],
         "libList": [],
-        "sourceDirList": [],
         "defineList": [
           "USE_HAL_DRIVER",
           "STM32H7B0xx",
@@ -155,5 +317,5 @@
       }
     }
   },
-  "version": "3.3"
+  "version": "3.4"
 }

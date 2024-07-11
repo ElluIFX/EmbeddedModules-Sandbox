@@ -1,0 +1,34 @@
+{
+    "version": 4,
+    "beforeBuildTasks": [
+        {
+            "name": "Sync Modules",
+            "disable": false,
+            "abortAfterFailed": true,
+            "stopBuildAfterFailed": true,
+            "command": "python D:\\PersonalDocument\\Code\\32\\EmbeddedModules\\tool.py -s"
+        }
+    ],
+    "afterBuildTasks": [],
+    "global": {
+        "use-microLIB": true,
+        "output-debug-info": "enable"
+    },
+    "c/cpp-compiler": {
+        "optimization": "level-3",
+        "one-elf-section-per-function": true,
+        "c99-mode": true,
+        "C_FLAGS": "--diag_suppress=1 --diag_suppress=1295",
+        "CXX_FLAGS": "--diag_suppress=1 --diag_suppress=1295",
+        "plain-char-is-signed": true,
+        "warnings": "all-warnings",
+        "gnu-extensions": true
+    },
+    "asm-compiler": {},
+    "linker": {
+        "output-format": "elf",
+        "ro-base": "0x08000000",
+        "rw-base": "0x20000000",
+        "$disableOutputTask": true
+    }
+}

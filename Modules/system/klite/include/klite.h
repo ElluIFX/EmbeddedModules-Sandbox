@@ -239,7 +239,8 @@ void kl_thread_resume(kl_thread_t thread);
 
 /**
  * @brief 使当前线程立即释放CPU控制权, 并进入就绪队列
- * @warning 控制权只能交给同优先级的线程, 释放控制权给低优先级线程只能通过kl_thread_sleep实现
+ * @warning 控制权只能交给同优先级的线程, 释放控制权给低优先级线程只能通过sleep实现.
+ * @warning 在Round-Robin调度功能开启时, yield大概率不会按照预期工作.
  */
 void kl_thread_yield(void);
 
@@ -302,9 +303,10 @@ void kl_thread_set_priority(kl_thread_t thread, uint32_t prio);
 uint32_t kl_thread_priority(kl_thread_t thread);
 
 /**
- * @brief 设置线程的抢占时间片大小
+ * @brief 设置线程的Round-Robin抢占时间片大小
  * @param thread 线程标识符
- * @param slice 时间片大小(Tick)
+ * @param slice 时间片大小 (Tick, >0)
+ * @warning 仅在Round-Robin调度功能开启且自定义时间片功能开启时有效
  */
 void kl_thread_set_slice(kl_thread_t thread, kl_tick_t slice);
 
@@ -958,6 +960,19 @@ void kl_thread_pool_shutdown(kl_thread_pool_t pool);
  */
 bool kl_thread_pool_submit(kl_thread_pool_t pool, void (*process)(void* arg),
                            void* arg, kl_tick_t timeout);
+
+/**
+ * @brief 提交任务到线程池, 并为参数分配内存
+ * @param  pool 线程池标识符
+ * @param  process 任务处理函数
+ * @param  arg 任务参数
+ * @param  size 参数大小
+ * @param  timeout 分配等待超时时间. 0非阻塞, KL_WAIT_FOREVER永久等待
+ * @retval 提交成功返回true, 失败返回false
+ */
+bool kl_thread_pool_submit_copy(kl_thread_pool_t pool,
+                                void (*process)(void* arg), void* arg,
+                                kl_size_t size, kl_tick_t timeout);
 
 /**
  * @brief 等待线程池中的任务执行完成

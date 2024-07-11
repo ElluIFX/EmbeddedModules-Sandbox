@@ -4,32 +4,30 @@
         {
             "name": "Sync Modules",
             "disable": false,
-            "abortAfterFailed": false,
+            "abortAfterFailed": true,
             "stopBuildAfterFailed": true,
-            "command": "python -u D:\\PersonalDocument\\Code\\32\\EmbeddedModules\\tool.py -p ${workspaceFolder} -s"
+            "command": "python D:\\PersonalDocument\\Code\\32\\EmbeddedModules\\tool.py -s"
         }
     ],
     "afterBuildTasks": [],
     "global": {
-        "use-microLIB": true,
-        "output-debug-info": "enable"
+        "output-debug-info": "enable",
+        "use-microLIB": true
     },
     "c/cpp-compiler": {
-        "optimization": "level-3",
-        "language-c": "default",
-        "language-cpp": "c++11",
-        "turn-Warning-into-errors": true,
-        "plain-char-is-signed": true,
+        "optimization": "level-fast",
+        "language-c": "gnu11",
+        "language-cpp": "gnu++11",
+        "warnings": "ac5-like-warnings",
+        "one-elf-section-per-function": true,
         "short-enums#wchar": true,
-        "warnings": "ac5-like-warnings"
+        "turn-Warning-into-errors": true
     },
     "asm-compiler": {
         "$use": "asm-auto"
     },
     "linker": {
         "output-format": "elf",
-        "misc-controls": "--diag_suppress=L6329",
-        "ro-base": "0x08000000",
-        "rw-base": "0x20000000"
+        "misc-controls": "--diag_suppress=L6329"
     }
 }
